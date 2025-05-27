@@ -1,26 +1,24 @@
 from .settings import *
 import os
 
-# Override settings for production
+# Production settings
 DEBUG = False
-ALLOWED_HOSTS = ['*']  # Render will provide the domain
+ALLOWED_HOSTS = ['vendinghive.pythonanywhere.com']  # Replace with your username
 
-# Database - Render provides PostgreSQL
+# Use MySQL database (PythonAnywhere provides MySQL)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DATABASE_NAME'),
-        'USER': os.getenv('DATABASE_USER'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-        'HOST': os.getenv('DATABASE_HOST'),
-        'PORT': os.getenv('DATABASE_PORT', '5432'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'vendinghive$vendinglocator',  # Replace yourusername
+        'USER': 'vendinghive',  # Replace yourusername
+        'PASSWORD': 'your_mysql_password',  # You'll set this later
+        'HOST': 'vendinghive.mysql.pythonanywhere-services.com',  # Replace yourusername
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
 
-# Static files for production
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Security settings
-SECURE_SSL_REDIRECT = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Static files
+STATIC_URL = '/static/'
+STATIC_ROOT = '/home/vendinghive/vending_locator/staticfiles'  # Replace yourusername
