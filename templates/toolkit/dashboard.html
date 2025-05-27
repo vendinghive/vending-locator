@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Toolkit - Vending Hive{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-tools"></i> Sales Toolkit</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Generate AI-powered sales scripts tailored to your vending business needs.</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-phone feature-icon"></i>
+                                <h5 class="card-title mt-3">Cold Call Scripts</h5>
+                                <p class="card-text">Professional phone scripts to open doors with potential clients.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-envelope feature-icon"></i>
+                                <h5 class="card-title mt-3">Email Templates</h5>
+                                <p class="card-text">Compelling email templates that get responses and meetings.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-handshake feature-icon"></i>
+                                <h5 class="card-title mt-3">In-Person Scripts</h5>
+                                <p class="card-text">Face-to-face sales scripts for closing deals in person.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <p><strong>Tip:</strong> Scripts are automatically generated when you find locations using the Smart Locator.</p>
+                    <a href="{% url 'locator:dashboard' %}" class="btn btn-primary">
+                        <i class="fas fa-search-location"></i> Find Locations
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        {% if recent_scripts %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Recent Scripts</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for script in recent_scripts %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ script.location_name }}</h6>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        {{ script.get_script_type_display }} - {{ script.location_category }}
+                                        <br>{{ script.created_at|date:"M j, Y g:i A" }}
+                                    </small>
+                                </p>
+                                <div class="script-content" style="max-height: 150px; overflow-y: auto;">
+                                    {{ script.script_content|truncatewords:50 }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="text-center">
+                    <a href="{% url 'toolkit:script_history' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> View All Scripts
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

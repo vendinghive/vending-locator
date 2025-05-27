@@ -1,0 +1,10 @@
+Django==4.2.7
+requests==2.31.0
+python-decouple==3.8
+paypalrestsdk==1.13.3
+google-generativeai==0.3.2
+django-crispy-forms==2.1
+crispy-bootstrap4==2022.1
+gunicorn==21.2.0
+whitenoise==6.6.0
+psycopg2-binary==2.9.9

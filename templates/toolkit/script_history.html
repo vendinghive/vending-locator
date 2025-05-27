@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Script History - Vending Hive{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Script History</h4>
+            </div>
+            <div class="card-body">
+                {% if scripts %}
+                    {% for script in scripts %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ script.location_name }}</h5>
+                            <p class="card-text">
+                                <strong>Type:</strong> {{ script.get_script_type_display }}<br>
+                                <strong>Category:</strong> {{ script.location_category }}<br>
+                                <strong>Machine:</strong> {{ script.machine_type }}<br>
+                                <strong>Created:</strong> {{ script.created_at|date:"M j, Y g:i A" }}
+                            </p>
+                            <div class="mt-2">
+                                <small class="text-muted">{{ script.script_content|truncatewords:20 }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center">
+                        <h5>No Scripts Generated Yet</h5>
+                        <p>Start by finding locations to generate your first sales scripts!</p>
+                        <a href="{% url 'locator:dashboard' %}" class="btn btn-primary">Find Locations</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

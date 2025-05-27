@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Subscription Plans - Vending Hive{% endblock %}
+
+{% block content %}
+<div class="text-center mb-5">
+    <h2><i class="fas fa-crown"></i> Choose Your Plan</h2>
+    {% if user.is_authenticated and user.usersubscription %}
+<div class="alert alert-info text-center">
+    <strong>Current Plan:</strong> {{ user.usersubscription.plan.get_name_display }} 
+    | <strong>Expires:</strong> {{ user.usersubscription.end_date|date:"M j, Y" }}
+    | <strong>Searches Used:</strong> {{ user.usersubscription.searches_used }}/{{ user.usersubscription.plan.searches_per_month }}
+</div>
+{% endif %}
+    <p class="lead">Find the perfect plan for your vending business needs</p>
+</div>
+
+<div class="row">
+    {% for plan in plans %}
+    <div class="col-md-3 mb-4">
+        <div class="card h-100 {% if plan.name == 'pro' %}border-primary{% endif %} card-hover">
+            {% if plan.name == 'pro' %}
+            <div class="card-header bg-primary text-white text-center">
+                <i class="fas fa-star"></i> Most Popular
+            </div>
+            {% endif %}
+            
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ plan.get_name_display }}</h4>
+                <h2 class="text-primary">
+                    {% if plan.price == 0 %}
+                        FREE
+                    {% else %}
+                        ${{ plan.price|floatformat:0 }}<small>/month</small>
+                    {% endif %}
+                </h2>
+                
+                <ul class="list-unstyled mt-3">
+                    <li><i class="fas fa-check text-success"></i> {{ plan.searches_per_month }} searches/month</li>
+                    <li><i class="fas fa-check text-success"></i> {{ plan.leads_per_search }} leads per search</li>
+                    <li><i class="fas fa-check text-success"></i> {{ plan.script_templates }} script templates</li>
+                    <li>
+                        {% if plan.regeneration_allowed %}
+                            <i class="fas fa-check text-success"></i> Unlimited regeneration
+                        {% else %}
+                            <i class="fas fa-times text-danger"></i> No regeneration
+                        {% endif %}
+                    </li>
+                </ul>
+                
+                <p class="text-muted">{{ plan.description }}</p>
+            </div>
+            
+            <div class="card-footer">
+                <a href="{% url 'subscriptions:subscribe' plan.id %}" class="btn btn-outline-primary w-100">
+                    {% if plan.price == 0 %}
+                        Get Started Free
+                    {% else %}
+                        Subscribe Now
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5><i class="fas fa-info-circle"></i> Plan Features Explained</h5>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6>Searches per Month</h6>
+                        <p>Number of location searches you can perform each month.</p>
+                        
+                        <h6>Leads per Search</h6>
+                        <p>Number of potential vending locations returned for each search.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Script Templates</h6>
+                        <p>AI-generated sales scripts for cold calls, emails, and in-person meetings.</p>
+                        
+                        <h6>Regeneration</h6>
+                        <p>Ability to regenerate scripts with different variations and tones.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

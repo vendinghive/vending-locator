@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: vending-locator
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn vending_locator.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.6
+      - key: DJANGO_SETTINGS_MODULE
+        value: vending_locator.production_settings

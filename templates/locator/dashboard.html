@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Vending Hive{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-search-location"></i> Smart Vending Locator</h4>
+            </div>
+            <div class="card-body">
+                {% if subscription and can_search %}
+                    <form id="searchForm">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="zip_code" class="form-label">ZIP Code</label>
+                                    <input type="text" class="form-control" id="zip_code" name="zip_code" 
+                                           placeholder="e.g., 90210" maxlength="5" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="machine_type" class="form-label">Machine Type</label>
+                                    <select class="form-control" id="machine_type" name="machine_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="Claw Machine">Claw Machine</option>
+                                        <option value="Snack & Drink Machines">Snack & Drink Machines</option>
+                                        <option value="Cotton Candy Machines">Cotton Candy Machines</option>
+                                        <option value="Hot Dog Vending">Hot Dog Vending</option>
+                                        <option value="Fresh Food Market Machines">Fresh Food Market Machines</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="radius" class="form-label">Radius (Miles)</label>
+                                    <select class="form-control" id="radius" name="radius" required>
+                                        <option value="">Select Radius</option>
+                                        <option value="1">1 Mile</option>
+                                        <option value="3">3 Miles</option>
+                                        <option value="5">5 Miles</option>
+                                        <option value="10">10 Miles</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-search"></i> Find Locations
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div id="loadingDiv" class="text-center" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Finding perfect locations for your machines...</p>
+                    </div>
+                    
+                    <div id="resultsDiv"></div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Search Unavailable</h5>
+                        {% if not subscription %}
+                            <p>You don't have an active subscription. Please choose a plan to start finding locations.</p>
+                            <a href="{% url 'subscriptions:plans' %}" class="btn btn-primary">Choose Plan</a>
+                        {% else %}
+                            <p>You've reached your search limit for this month or your subscription has expired.</p>
+                            <a href="{% url 'subscriptions:plans' %}" class="btn btn-primary">Upgrade Plan</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Usage Statistics</h5>
+            </div>
+            <div class="card-body">
+                {% if subscription %}
+                    <p><strong>Current Plan:</strong> {{ subscription.plan.get_name_display }}</p>
+                    <p><strong>Searches Used:</strong> {{ subscription.searches_used }}/{{ subscription.plan.searches_per_month }}</p>
+                    <p><strong>Remaining:</strong> {{ searches_remaining }}</p>
+                    
+                    <div class="progress mb-3">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {% widthratio subscription.searches_used subscription.plan.searches_per_month 100 %}%">
+                        </div>
+                    </div>
+                    
+                    <p><strong>Plan Expires:</strong> {{ subscription.end_date|date:"M j, Y" }}</p>
+                {% else %}
+                    <p>No active subscription</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-tools"></i> Quick Tools</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'toolkit:dashboard' %}" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="fas fa-phone"></i> Sales Toolkit
+                </a>
+                <a href="{% url 'locator:search_history' %}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-history"></i> Search History
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#searchForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        $('#loadingDiv').show();
+        $('#resultsDiv').empty();
+        
+        $.ajax({
+            url: '{% url "locator:search_locations" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                $('#loadingDiv').hide();
+                
+                if (response.success) {
+                    displayResults(response.places, response.searches_remaining);
+                } else {
+                    $('#resultsDiv').html(`
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> ${response.error}
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                $('#loadingDiv').hide();
+                $('#resultsDiv').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> An error occurred. Please try again.
+                    </div>
+                `);
+            }
+        });
+    });
+    
+    function displayResults(places, searchesRemaining) {
+        let html = `
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> Found ${places.length} diverse locations! 
+                (${searchesRemaining} searches remaining)
+            </div>
+        `;
+        
+        places.forEach(function(place, index) {
+            html += `
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-map-marker-alt"></i> ${place.name}</h5>
+                        <span class="badge bg-secondary">${place.category}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Address:</strong> ${place.address}</p>
+                                <p><strong>Business Hours:</strong> ${place.business_hours || 'Not available'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Phone:</strong> ${place.phone || 'Not available'}</p>
+                                <p><strong>Email:</strong> ${place.email || 'Not available'}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary me-2" onclick="generateScript('${place.name}', '${place.category}', 'cold_call', ${index})">
+                                <i class="fas fa-phone"></i> Generate Cold Call Script
+                            </button>
+                            <button class="btn btn-outline-primary me-2" onclick="generateScript('${place.name}', '${place.category}', 'email', ${index})">
+                                <i class="fas fa-envelope"></i> Generate Email
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="generateScript('${place.name}', '${place.category}', 'in_person', ${index})">
+                                <i class="fas fa-handshake"></i> In-Person Script
+                            </button>
+                        </div>
+                        
+                        <div id="script-${index}" class="mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        $('#resultsDiv').html(html);
+    }
+    
+    window.generateScript = function(locationName, category, scriptType, index) {
+        const machineType = $('#machine_type').val();
+        
+        $(`#script-${index}`).html(`
+            <div class="text-center">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <span class="ms-2">AI is crafting your personalized script...</span>
+            </div>
+        `).show();
+        
+        $.ajax({
+            url: '{% url "toolkit:generate_script" %}',
+            type: 'POST',
+            data: {
+                'script_type': scriptType,
+                'location_name': locationName,
+                'location_category': category,
+                'machine_type': machineType,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    $(`#script-${index}`).html(`
+                        <div class="alert alert-primary">
+                            <h6><i class="fas fa-magic"></i> Your ${scriptType.replace('_', ' ').toUpperCase()} Script:</h6>
+                            <div class="script-content" style="background-color:#f8f9fa; padding:15px; border-radius:5px; font-family:monospace; white-space:pre-wrap; border-left:4px solid #007bff;">${response.script_content}</div>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="regenerateScript('${locationName}', '${category}', '${scriptType}', ${index})">
+                                <i class="fas fa-redo"></i> Regenerate
+                            </button>
+                        </div>
+                    `);
+                } else {
+                    $(`#script-${index}`).html(`
+                        <div class="alert alert-danger">${response.error}</div>
+                    `);
+                }
+            },
+            error: function() {
+                $(`#script-${index}`).html(`
+                    <div class="alert alert-danger">Error generating script. Please try again.</div>
+                `);
+            }
+        });
+    };
+    
+    window.regenerateScript = function(locationName, category, scriptType, index) {
+        generateScript(locationName, category, scriptType, index);
+    };
+});
+</script>
+{% endblock %}
